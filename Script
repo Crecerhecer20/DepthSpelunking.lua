@@ -1,1 +1,144 @@
+local function createESPBox(part, color, name, transparency)
+    local espBox = Instance.new("BoxHandleAdornment")
+    espBox.Size = part.Size
+    espBox.Color3 = color
+    espBox.AlwaysOnTop = true
+    espBox.ZIndex = 0
+    espBox.Transparency = transparency
+    espBox.Adornee = part
+    espBox.Name = name
+    espBox.Parent = part
+end
 
+local function removeOldESP(part, name)
+    for _, child in ipairs(part:GetChildren()) do
+        if child:IsA("BoxHandleAdornment") and child.Name == name then
+            child:Destroy()
+        end
+    end
+end
+
+-- RedESP for Entities
+local function applyRedESPToModel(model)
+    for _, descendant in ipairs(model:GetDescendants()) do
+        if descendant:IsA("MeshPart") or (
+            descendant:IsA("BasePart") and 
+            (descendant.Name == "Torso" or descendant.Name == "HumanoidRootPart" or
+             descendant.Name == "LeftArm" or descendant.Name == "RightArm" or
+             descendant.Name == "LeftLeg" or descendant.Name == "RightLeg" or
+             descendant.Name == "Head")) 
+        then
+            removeOldESP(descendant, "RedESP")
+            createESPBox(descendant, Color3.new(1, 0, 0), "RedESP", 0.5)
+        end
+    end
+end
+
+local function enableRedESP()
+    local entities = game.Workspace:WaitForChild("Entities")
+    while true do
+        for _, group in ipairs(entities:GetChildren()) do
+            if group:IsA("Model") then
+                applyRedESPToModel(group)
+            end
+        end
+        task.wait(3)
+    end
+end
+
+-- BlueESP for SpawnedItems
+local function applyBlueESPToTargets()
+    local spawnedItems = workspace:FindFirstChild("CurrentMap") and workspace.CurrentMap:FindFirstChild("SpawnedItems")
+    if not spawnedItems then return end
+
+    for _, group in ipairs(spawnedItems:GetChildren()) do
+        if group:IsA("Model") or group:IsA("Folder") then
+            if group.Name == "Code" or group.Name == "ColourCode" then
+                for _, part in ipairs(group:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        removeOldESP(part, "BlueESP")
+                        createESPBox(part, Color3.fromRGB(0, 0, 255), "BlueESP", 0.5)
+                    end
+                end
+            end
+        end
+    end
+end
+
+local function enableBlueESP()
+    while true do
+        applyBlueESPToTargets()
+        task.wait(3)
+    end
+end
+
+-- GreenESP for CurrentTasks
+local function applyGreenESPToTasks()
+    local currentMap = workspace:FindFirstChild("CurrentMap")
+    if not currentMap then return end
+
+    local currentTasks = currentMap:FindFirstChild("CurrentTasks")
+    if not currentTasks then return end
+
+    local targetNames = {
+        Wires = true, Pipes = true, SimonSays = true,
+        NumberSequence = true, Keypad = true,
+        ColourKeypad = true, Generator = true
+    }
+
+    for _, model in ipairs(currentTasks:GetChildren()) do
+        if model:IsA("Model") and targetNames[model.Name] then
+            local transmitter = model:FindFirstChildOfClass("TouchTransmitter")
+            local valueObject = transmitter and transmitter:FindFirstChild("Value")
+            if not (valueObject and valueObject.Value == true) then
+                for _, part in ipairs(model:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        removeOldESP(part, "GreenESP")
+                        createESPBox(part, Color3.fromRGB(0, 255, 0), "GreenESP", 0.9)
+                    end
+                end
+            else
+                for _, part in ipairs(model:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        removeOldESP(part, "GreenESP")
+                    end
+                end
+            end
+        end
+    end
+end
+
+local function enableGreenESP()
+    while true do
+        applyGreenESPToTasks()
+        task.wait(3)
+    end
+end
+
+-- PurpleESP for CurrentUpgrades
+local function applyPurpleESPToUpgrades()
+    local currentMap = workspace:FindFirstChild("CurrentMap")
+    if not currentMap then return end
+
+    local upgrades = currentMap:FindFirstChild("CurrentUpgrades")
+    if not upgrades then return end
+
+    for _, obj in ipairs(upgrades:GetDescendants()) do
+        if obj:IsA("BasePart") then
+            removeOldESP(obj, "PurpleESP")
+            createESPBox(obj, Color3.fromRGB(128, 0, 128), "PurpleESP", 0.25)
+        end
+    end
+end
+
+local function enablePurpleESP()
+    while true do
+        applyPurpleESPToUpgrades()
+        task.wait(3)
+    end
+end
+
+task.spawn(enableRedESP)
+task.spawn(enableBlueESP)
+task.spawn(enableGreenESP)
+task.spawn(enablePurpleESP)
